@@ -2,4 +2,6 @@ node_modules
 .env
 dist
 build
-uploads
+uploads/*
+!uploads/.gitkeep
+package-lock.json

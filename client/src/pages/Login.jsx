@@ -1,13 +1,14 @@
 import { useState } from "react";
 import API from "../api/api";
 import useAuthStore from "../store/authStore";
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
 
 function Login() {
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     email: "",
@@ -19,20 +20,34 @@ function Login() {
       ...form,
       [e.target.name]: e.target.value
     });
-    if (error) setError("");
+    setErrors({
+      ...errors,
+      [e.target.name]: false
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+    if (!form.email) newErrors.email = true;
+    if (!form.password) newErrors.password = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please fill in both email and password");
+      return;
+    }
+
     setLoading(true);
-    setError("");
 
     try {
       const res = await API.post("/auth/login", form);
       login(res.data.user, res.data.token);
+      toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+      toast.error(err.response?.data?.message || "Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -87,20 +102,14 @@ function Login() {
             <h2 className="text-[32px] font-black text-black text-center mb-8 tracking-tighter">LOGIN</h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-full text-sm font-medium text-center border border-red-100">
-                  {error}
-                </div>
-              )}
 
               <div>
                 <input
                   name="email"
                   type="email"
                   placeholder="Email Address"
-                  required
                   onChange={handleChange}
-                  className="w-full px-6 py-3 rounded-full border border-slate-300 text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-black font-medium"
+                  className={`w-full px-6 py-3 rounded-full border text-[13px] focus:outline-none transition-colors placeholder:text-black font-medium ${errors.email ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-0' : 'border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary'}`}
                 />
               </div>
 
@@ -109,9 +118,8 @@ function Login() {
                   name="password"
                   type="password"
                   placeholder="Password"
-                  required
                   onChange={handleChange}
-                  className="w-full px-6 py-3 rounded-full border border-slate-300 text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-black font-medium"
+                  className={`w-full px-6 py-3 rounded-full border text-[13px] focus:outline-none transition-colors placeholder:text-black font-medium ${errors.password ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-0' : 'border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary'}`}
                 />
               </div>
 

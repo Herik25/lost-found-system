@@ -12,6 +12,16 @@ exports.createItem = async (req, res) => {
       locationFound
     } = req.body;
 
+    const duplicateItem = await Item.findOne({
+      title,
+      category,
+      reportedBy: req.user.id
+    });
+
+    if (duplicateItem) {
+      return res.status(400).json({ message: "You have already reported an item with this title and category" });
+    }
+
     const images = req.files?.map(file => file.path);
     
     const item = await Item.create({
@@ -35,9 +45,15 @@ exports.createItem = async (req, res) => {
 
 exports.getItems = async (req, res) => {
   try {
+    const limit = 12;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
     const items = await Item.find()
       .populate("reportedBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -58,9 +74,15 @@ exports.getRecentItems = async (req, res) => {
 
 exports.getLostItems = async (req, res) => {
   try {
+    const limit = 12;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
     const items = await Item.find({ type: "lost" })
       .populate("reportedBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -69,9 +91,15 @@ exports.getLostItems = async (req, res) => {
 
 exports.getFoundItems = async (req, res) => {
   try {
+    const limit = 12;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
     const items = await Item.find({ type: "found" })
       .populate("reportedBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -84,18 +112,21 @@ exports.searchItems = async (req, res) => {
     let query = {};
 
     if (q) {
-      query.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } }
-      ];
+      query.$text = { $search: q };
     }
     if (category) query.category = category;
     if (status) query.status = status;
     if (type) query.type = type;
 
+    const limit = 12;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
     const items = await Item.find(query)
       .populate("reportedBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.json(items);
   } catch (error) {

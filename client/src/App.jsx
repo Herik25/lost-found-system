@@ -10,10 +10,12 @@ import ItemDetail from "./pages/ItemDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Layout from "./layouts/Layout";
+import { Toaster } from "sonner";
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" richColors />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />

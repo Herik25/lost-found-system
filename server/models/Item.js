@@ -52,4 +52,8 @@ const itemSchema = new mongoose.Schema(
 { timestamps: true }
 );
 
+itemSchema.index({ title: "text", description: "text" });
+itemSchema.index({ category: 1 });
+itemSchema.index({ status: 1 });
+
 module.exports = mongoose.model("Item", itemSchema);

@@ -15,11 +15,13 @@ const {
 const authMiddleware = require("../middlewares/authMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
+const { validateItemReport } = require("../middlewares/validationMiddleware");
 
 router.post(
   "/",
   authMiddleware,
   upload.array("images", 5),
+  validateItemReport,
   createItem
 );
 

@@ -1,17 +1,17 @@
 import { useState } from "react";
 import API from "../api/api";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
 
-const InputField = ({ label, name, type = "text", value, onChange }) => (
+const InputField = ({ label, name, type = "text", value, onChange, error }) => (
   <div className="flex flex-col w-full">
     <label className="text-[12px] text-gray-700 font-medium ml-3 mb-0.5">{label}</label>
-    <div className="bg-[#e2e2e2] rounded-full h-10 px-5 flex items-center relative overflow-hidden">
+    <div className={`bg-[#e2e2e2] rounded-full h-10 px-5 flex items-center relative overflow-hidden transition-all ${error ? 'ring-1 ring-red-500 bg-red-50' : ''}`}>
       {/* underline from the design */}
-      <div className="absolute bottom-[10px] left-4 right-4 h-px bg-gray-500 pointer-events-none"></div>
+      <div className={`absolute bottom-[10px] left-4 right-4 h-px pointer-events-none ${error ? 'bg-red-500' : 'bg-gray-500'}`}></div>
       <input 
         type={type}
         name={name}
-        required
         onChange={onChange}
         value={value}
         className="w-full bg-transparent outline-none text-[15px] z-10 relative pb-1 text-slate-800 focus:outline-none focus:ring-0"
@@ -41,7 +41,7 @@ const SelectField = ({ label, name, value, onChange }) => (
 function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     firstName: "",
@@ -57,18 +57,35 @@ function Register() {
       ...form,
       [e.target.name]: e.target.value
     });
-    if (error) setError("");
+    setErrors({
+      ...errors,
+      [e.target.name]: false
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+    if (!form.firstName) newErrors.firstName = true;
+    if (!form.lastName) newErrors.lastName = true;
+    if (!form.email) newErrors.email = true;
+    if (!form.password) newErrors.password = true;
+    if (!form.confirmPassword) newErrors.confirmPassword = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please fill in all fields");
+      return;
+    }
+    
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      setErrors({ password: true, confirmPassword: true });
+      toast.error("Passwords do not match");
       return;
     }
     
     setLoading(true);
-    setError("");
 
     try {
       const payload = {
@@ -80,10 +97,11 @@ function Register() {
       
       const res = await API.post("/auth/register", payload);
       if (res.status === 201) {
+        toast.success("Registration successful! Please sign in.");
         navigate("/login");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      toast.error(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,18 +136,16 @@ function Register() {
 
                 <div className="flex flex-col gap-[14px] mt-2 mb-4 flex-1">
                    <div className="flex gap-4">
-                     <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
-                     <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
+                     <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleChange} error={errors.firstName} />
+                     <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} error={errors.lastName} />
                    </div>
-                   <InputField label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
-                   <InputField label="Password" name="password" type="password" value={form.password} onChange={handleChange} />
-                   <InputField label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} />
+                   <InputField label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email} />
+                   <InputField label="Password" name="password" type="password" value={form.password} onChange={handleChange} error={errors.password} />
+                   <InputField label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} error={errors.confirmPassword} />
                    <SelectField label="Role" name="role" value={form.role} onChange={handleChange} />
                 </div>
 
-                {error && <p className="text-red-500 text-xs text-center font-bold mt-2">{error}</p>}
-                
-                <p className="text-center text-xs text-slate-500 font-medium">
+                <p className="text-center text-xs text-slate-500 font-medium pt-2">
                    Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Sign In</Link>
                 </p>
 

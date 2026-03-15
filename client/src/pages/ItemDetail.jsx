@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/api";
 import useAuthStore from "../store/authStore";
 import { MapPin, Tag, Clock, Package, AlertCircle, ArrowLeft, Send } from "lucide-react";
+import { toast } from "sonner";
 
 function ItemDetail() {
   const { id } = useParams();
@@ -18,7 +19,7 @@ function ItemDetail() {
   const [proofDescription, setProofDescription] = useState("");
   const [submittingClaim, setSubmittingClaim] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
-  const [claimError, setClaimError] = useState("");
+  const [claimErrorField, setClaimErrorField] = useState(false);
 
   useEffect(() => {
     const fetchItemDetails = async () => {
@@ -38,8 +39,13 @@ function ItemDetail() {
 
   const handleClaimSubmit = async (e) => {
     e.preventDefault();
+    if (!proofDescription.trim()) {
+      setClaimErrorField(true);
+      toast.error("Please provide a proof description");
+      return;
+    }
+    
     setSubmittingClaim(true);
-    setClaimError("");
     
     try {
       await API.post("/claims", {
@@ -49,11 +55,12 @@ function ItemDetail() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      toast.success("Claim Request Submitted Successfully!");
       setClaimSuccess(true);
       setShowClaimForm(false);
     } catch (err) {
       console.error(err);
-      setClaimError(err.response?.data?.message || "Failed to submit claim. Please try again.");
+      toast.error(err.response?.data?.message || "Failed to submit claim. Please try again.");
     } finally {
       setSubmittingClaim(false);
     }
@@ -120,7 +127,7 @@ function ItemDetail() {
           {item.images && item.images.length > 1 && (
             <div className="grid grid-cols-4 gap-3">
               {item.images.slice(1).map((imgUrl, i) => (
-                <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer hover:ring-2 ring-primary transition-all">
+                <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer hover:ring-1 ring-primary transition-all">
                   <img src={`http://localhost:5000/${imgUrl.replace(/\\/g, '/')}`} alt={`thumbnail-${i}`} className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -163,54 +170,54 @@ function ItemDetail() {
             </p>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-slate-200">
-            {item.type === "found" && item.status !== "claimed" && !claimSuccess && !showClaimForm && (
-              <button 
-                onClick={() => setShowClaimForm(true)}
-                className="w-full btn-primary h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-emerald-600/20"
-              >
-                Request Claim
-              </button>
-            )}
+          {
+            item.type === "found" &&  
+            <div className="mt-auto pt-6 border-t border-slate-200">
+              {item.type === "found" && item.status !== "claimed" && !claimSuccess && !showClaimForm && (
+                <button 
+                  onClick={() => setShowClaimForm(true)}
+                  className="w-full btn-primary h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-emerald-600/20"
+                >
+                  Request Claim
+                </button>
+              )}
 
-            {showClaimForm && (
-              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 animate-fade-in relative">
-                <h3 className="font-bold text-slate-800 mb-2">Claim Verification Process</h3>
-                <p className="text-sm text-slate-500 mb-4">
-                  Provide detailed identifiable proof that you are the rightful owner of this item. Be specific (e.g. wallpaper on phone, contents inside wallet, specific scratch or damage).
-                </p>
-                
-                <form onSubmit={handleClaimSubmit}>
-                  <textarea
-                    required
-                    value={proofDescription}
-                    onChange={(e) => setProofDescription(e.target.value)}
-                    placeholder="Describe specific details only the owner would know..."
-                    className="w-full p-4 bg-white border border-slate-300 rounded-2xl resize-none h-32 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary mb-4"
-                  />
+              {showClaimForm && (
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 animate-fade-in relative">
+                  <h3 className="font-bold text-slate-800 mb-2">Claim Verification Process</h3>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Provide detailed identifiable proof that you are the rightful owner of this item. Be specific (e.g. wallpaper on phone, contents inside wallet, specific scratch or damage).
+                  </p>
                   
-                  {claimError && <p className="text-red-500 text-sm font-bold mb-4">{claimError}</p>}
-                  
-                  <div className="flex gap-3">
-                    <button 
-                      type="button" 
-                      onClick={() => setShowClaimForm(false)}
-                      className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      disabled={submittingClaim || !proofDescription.trim()}
-                      className="flex-1 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
-                    >
-                      {submittingClaim ? 'Submitting...' : 'Submit Evidence'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
+                  <form onSubmit={handleClaimSubmit}>
+                    <textarea
+                      value={proofDescription}
+                      onChange={(e) => { setProofDescription(e.target.value); setClaimErrorField(false); }}
+                      placeholder="Describe specific details only the owner would know..."
+                      className={`w-full p-4 bg-white border rounded-2xl resize-none h-32 outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary mb-4 transition-colors ${claimErrorField ? 'border-red-500 bg-red-50 ring-1 ring-red-500/20' : 'border-slate-300'}`}
+                    />
+                    
+                    <div className="flex gap-3">
+                      <button 
+                        type="button" 
+                        onClick={() => setShowClaimForm(false)}
+                        className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        disabled={submittingClaim || !proofDescription.trim()}
+                        className="flex-1 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+                      >
+                        {submittingClaim ? 'Submitting...' : 'Submit Evidence'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          }
         </div>
       </div>
     </div>

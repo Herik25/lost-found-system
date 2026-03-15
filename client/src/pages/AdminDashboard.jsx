@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import API from "../api/api";
 import useAuthStore from "../store/authStore";
 import { CopyCheck, XCircle, AlertCircle, RefreshCw, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 function AdminDashboard() {
   const token = useAuthStore((state) => state.token);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const fetchClaims = useCallback(async () => {
     setLoading(true);
@@ -16,10 +16,9 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setClaims(res.data);
-      setError("");
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch claim requests");
+      toast.error("Failed to fetch claim requests");
     } finally {
       setLoading(false);
     }
@@ -34,11 +33,12 @@ function AdminDashboard() {
       await API.put(`/claims/${action}/${claimId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      toast.success(`Claim successfully ${action}d!`);
       // Refresh claims after action
       fetchClaims();
     } catch (err) {
       console.error(err);
-      alert(`Failed to ${action} claim`);
+      toast.error(err.response?.data?.message || `Failed to ${action} claim`);
     }
   };
 
@@ -68,13 +68,6 @@ function AdminDashboard() {
           Refresh Claims
         </button>
       </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-5 rounded-2xl flex items-center gap-3 font-semibold text-lg max-w-2xl mx-auto shadow-sm mb-6">
-          <AlertCircle size={24} className="text-red-500 shrink-0" />
-          {error}
-        </div>
-      )}
 
       {claims.length === 0 ? (
         <div className="bg-white border-2 border-dashed border-slate-200 text-center py-20 px-8 rounded-4xl max-w-3xl mx-auto flex flex-col items-center">

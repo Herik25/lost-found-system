@@ -6,6 +6,7 @@ import ReportLost from "./pages/ReportLost";
 import ReportFound from "./pages/ReportFound";
 import LostItems from "./pages/LostItems";
 import FoundItems from "./pages/FoundItems";
+import ItemDetail from "./pages/ItemDetail";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Layout from "./layouts/Layout";
 
@@ -50,6 +51,13 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <FoundItems />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/item/:id" element={
+          <ProtectedRoute>
+            <Layout>
+              <ItemDetail />
             </Layout>
           </ProtectedRoute>
         } />

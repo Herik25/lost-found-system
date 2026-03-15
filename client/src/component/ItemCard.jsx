@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MapPin, Tag } from 'lucide-react';
 
 function ItemCard({ item }) {
@@ -67,9 +68,9 @@ function ItemCard({ item }) {
             </span>
           </div>
 
-          <button className="text-primary text-xs font-bold hover:text-primary-dark transition-colors uppercase tracking-wider">
+          <Link to={`/item/${item._id}`} className="text-primary text-xs font-bold hover:text-primary-dark transition-colors uppercase tracking-wider">
             View Details
-          </button>
+          </Link>
         </div>
       </div>
     </div>
